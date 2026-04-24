@@ -1,0 +1,118 @@
+{% extends "main.html" %}
+
+{% block titulo %}Página de Inicio{% endblock %}
+
+{% block contenido %}
+    <div id="mensajeAlerta" class="d-none alert" role="alert"></div>
+    <div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Agregar Nueva Serie</h6>
+    </div>
+    
+    <div class="card-body">
+        <form action="#" method="POST" id="formSerie">
+            
+			<div class="form-group">
+				<label for="nombreSerie">Nombre de la serie</label>
+				<input type="text" class="form-control" id="nombreSerie" name="serr_nombre" placeholder="Ej. El erasgod"
+				value="{% if datos %}{{datos.ser_nombre}}{% endif %}"
+				required>
+			</div>
+
+			<div class="form-row">
+				<div class="form-group col-md-6">
+					<label for="fechaInicio">Fecha de inicio</label>
+					<input type="date" class="form-control" id="fechaInicio" name="ser_fecha_ini"
+					value="{% if datos %}{{datos.ser_fecha_ini}}{% endif %}"required>
+				</div>
+
+				<div class="form-group col-md-6">
+					<label for="fechaFin">Fecha de fin</label>
+					<input type="date" class="form-control" id="fechaFin" name="ser_fecha_fin" required>
+				</div>
+			</div>
+
+            <hr>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save fa-sm text-white-50"></i> {% if datos %} Modificar Serie
+                                                                {% else %} Guardar Serie
+                                                                {% endif %}
+            </button>
+            <button type="reset" class="btn btn-secondary">
+                Limpiar
+            </button>
+
+        </form>
+    </div>
+</div>
+{% endblock %}
+{%block javas%}
+document.getElementById('formSerie').addEventListener('submit', async function(e) {
+    e.preventDefault(); 
+    const form = this;
+    const btnSubmit = form.querySelector('button[type="submit"]');
+    const mensajeAlerta = document.getElementById('mensajeAlerta');
+
+    
+    const data = {
+    ser_nombre: document.getElementById('nombreSerie').value,
+    ser_fecha_ini: document.getElementById('fechaInicio').value,
+    ser_fecha_fin: document.getElementById('fechaFin').value
+    {%if datos%},ser_id:{{datos.ser_id}}{%endif%}
+	};
+
+	try {
+		// Cambiamos el estado del botón mientras carga
+		btnSubmit.disabled = true;
+		btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+		mensajeAlerta.classList.add('d-none');
+		const response = await fetch('/series', {
+			method: '{%if datos%}PUT{%else%}POST{%endif%}',
+			headers: {
+				'Content-Type': 'application/json',
+				// 'Authorization': 'Bearer ' + tuToken // Descomenta esto si tu API requiere un token JWT
+			},
+			body: JSON.stringify(data) // Convertimos el objeto JavaScript a formato JSON
+		});
+
+        
+        const result = await response.json();
+
+        
+        if (response.ok) {
+            // Caso de éxito (Códigos 200 o 201)
+            mostrarMensaje('¡Serie guardada correctamente!', 'success');
+            form.reset(); // Limpiamos los campos
+            
+        } else {
+            // Caso de error del lado de la API (ej. validación fallida, error 400 o 500)
+            const mensajeError = result.message || 'Error al guardar la serie.';
+            mostrarMensaje(mensajeError, 'danger');
+        }
+
+    } catch (error) {
+        console.error('Error en la petición:', error);
+        mostrarMensaje('Error de conexión con el servidor.', 'danger');
+        
+    } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<i class="fas fa-save fa-sm text-white-50"></i> Guardar Serie';
+    }
+});
+
+// Función de apoyo para mostrar la alerta de Bootstrap
+function mostrarMensaje(texto, tipo) {
+    const mensajeAlerta = document.getElementById('mensajeAlerta');
+    mensajeAlerta.innerHTML = texto;
+    mensajeAlerta.className = `alert alert-${tipo} mt-3`; 
+    mensajeAlerta.classList.remove('d-none'); // Hacemos visible la alerta
+    
+    // Opcional: Ocultar el mensaje automáticamente después de 5 segundos
+    setTimeout(() => {
+        mensajeAlerta.classList.add('d-none');
+    }, 5000);
+}
+
+
+
+{% endblock %}
